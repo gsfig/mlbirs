@@ -5,7 +5,7 @@ def mer(query):
     command1 = "bash"
     directory = "OutServices/MER"
     command2 = "get_entities.sh"
-    text = str('nicotinic acid')
+    text = str(query)
     lexicon = "lexicon"
 
     sreturn = ''

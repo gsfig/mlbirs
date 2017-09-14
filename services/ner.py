@@ -1,4 +1,4 @@
-from services.ner import mer
+from services.implementations import mer
 
 
 class Ner:

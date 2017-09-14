@@ -1,9 +1,7 @@
-import subprocess
-
 from django.http import HttpResponse
 
-from services.ner.ner import Ner
-from services.translateService.translateQuery import TranslationService
+from services.ner import Ner
+from services.translateQuery import TranslationService
 
 
 def translate(request):
@@ -12,13 +10,18 @@ def translate(request):
         # 1. Translate
         transl = TranslationService()
         transl.toTranslate = request.GET.get('QueryField', '')
-        translatedquery = transl.translatequery()
+        langfrom = "pt"
+        langto = "en"
+        translatedquery = transl.translatequery(langfrom, langto)
 
 
         # 2. NER
         ner = Ner()
         ner.query = translatedquery
         response = ner.getner()
+
+        # 3. similar
+
 
 
     return HttpResponse(response)
