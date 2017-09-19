@@ -1,9 +1,9 @@
 from django.conf.urls import url
 
-from controllerApp import dispacher
+from controllerMain import dispacher
 from . import views
 
-app_name = 'controllerApp'
+app_name = 'controllerMain'
 
 
 

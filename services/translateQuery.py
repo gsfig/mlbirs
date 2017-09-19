@@ -6,8 +6,8 @@ class TranslationService:
     translated = ""
 
     def translatequery(self, langfrom, langto):
+        self.translated = bingTranslation.bingtranslation(self.toTranslate, langfrom, langto)
 
-        return bingTranslation.bingtranslation(self.toTranslate, langfrom, langto)
 
 
 

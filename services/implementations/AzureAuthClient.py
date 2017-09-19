@@ -49,4 +49,7 @@ class AzureAuthClient(object):
             self.token = response.content
             self.reuse_token_until = datetime.utcnow() + timedelta(minutes=5)
 
-        return self.token
+        # original way
+        #return self.token
+        # after error of 500 internal error, expecting sting, not bytes:
+        return str(self.token, 'utf-8')

@@ -17,7 +17,7 @@ from django.conf.urls import url, include
 from django.contrib import admin
 
 urlpatterns = [
-    url(r'^mlRadio/', include('controllerApp.urls')),
-    url(r'^form/', include('controllerApp.urls')),
+    url(r'^mlRadio/', include('controllerMain.urls')),
+    url(r'^form/', include('controllerMain.urls')),
     url(r'^admin/', admin.site.urls),
 ]

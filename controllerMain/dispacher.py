@@ -10,12 +10,15 @@ def translate(request):
         # 1. Translate
         transl = TranslationService()
         transl.toTranslate = request.GET.get('QueryField', '')
+        print("toTranslate: " + transl.toTranslate)
         langfrom = "pt"
         langto = "en"
-        translatedquery = transl.translatequery(langfrom, langto)
+        transl.translatequery(langfrom, langto)
+        translatedquery = transl.translated
 
+        print(translatedquery)
 
-        # 2. NER
+            # 2. NER
         ner = Ner()
         ner.query = translatedquery
         response = ner.getner()
