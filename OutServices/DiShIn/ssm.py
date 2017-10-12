@@ -79,6 +79,8 @@ def common_ancestors (entry1, entry2):
     
     for row in rows:
         ancestors.append(row[0])
+    print("common_ancestors: " + str(entry1) + " " + str(entry2))
+    print(str(ancestors))
     return ancestors
 
 

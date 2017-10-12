@@ -92,6 +92,7 @@ def create (owl_file, sb_file, name_prefix, relation, annotation_file):
                  ''', (entry1,entry2,))
                  connection.commit()
 
+    print("Semantics_base end s p o insert")
     connection.execute('''
          DROP TABLE IF EXISTS transitive;
     ''')
@@ -123,7 +124,7 @@ def create (owl_file, sb_file, name_prefix, relation, annotation_file):
     n_entries = 0
     previous_n_entries = -1
     i = 1
-      
+    print("starting distance")
     while n_entries > previous_n_entries:   
       connection.execute('''
          INSERT INTO transitive (entry1, entry2, distance)
@@ -138,7 +139,9 @@ def create (owl_file, sb_file, name_prefix, relation, annotation_file):
       rows=connection.execute('''SELECT COUNT(*) FROM transitive''')
       for row in rows:
         n_entries = row[0]
-      
+
+    print("end distance")
+
     # Calculate the frequency of each entry based on the number of references
     if annotation_file != '' :
         file  = open(annotation_file, 'r').read()
@@ -153,7 +156,7 @@ def create (owl_file, sb_file, name_prefix, relation, annotation_file):
         connection.execute('''UPDATE entry SET refs = 1''')
 
     connection.commit()
-
+    print("end frequency")
     # Calculate the number of descendents 
     connection.execute('''UPDATE entry SET desc = 
                                (SELECT COUNT(DISTINCT t.entry1)
@@ -161,7 +164,7 @@ def create (owl_file, sb_file, name_prefix, relation, annotation_file):
                                 WHERE t.entry2=entry.id)''')
         
     connection.commit()
-
+    print("end decendents")
     connection.execute('''
       UPDATE entry SET freq =
       (SELECT SUM(e2.refs) 
@@ -174,4 +177,5 @@ def create (owl_file, sb_file, name_prefix, relation, annotation_file):
 
     connection.commit()
     connection.close()
-   
+
+    print("end semantics base")
