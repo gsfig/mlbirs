@@ -1,9 +1,0 @@
-gold
-silver
-copper
-platinum
-palladium
-metal
-coinage
-precious
-
