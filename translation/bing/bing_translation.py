@@ -1,7 +1,7 @@
 from xml.etree import ElementTree
 import requests
-from services.implementations.AzureAuthClient import AzureAuthClient
-from services.implementations.azureClientSecret import getsecret
+from translation.bing.AzureAuthClient import AzureAuthClient
+from translation.bing.azureClientSecret import getsecret
 
 
 def GetTextAndTranslate(textToTranslate, finalToken, langfrom, langto):
@@ -17,7 +17,7 @@ def GetTextAndTranslate(textToTranslate, finalToken, langfrom, langto):
     return translation.text
 
 
-def bingtranslation(query, langfrom, langto):
+def bingtranslation(query: str, langfrom: str, langto: str) -> str:
 
     # adapted from github.com/MicrosoftTranslator/PythonConsole
 
