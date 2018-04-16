@@ -6,6 +6,11 @@ import sqlite3
 
 
 def corpus_configuration(config):
+    """
+    Initial corpus configuration
+    :param config: config.ini
+    :return: connection with database
+    """
     corpus_db_name = config.get("Corpus", "corpus_file")
     corpus_path = config.get("Corpus", "path")
     file_ext = config.get("Corpus", "file_ext")
@@ -18,6 +23,15 @@ def corpus_configuration(config):
 
 
 def corpus_setup_db(corpus_db_name, corpus_path, file_ext, file_start_pt, file_start_en, config):
+    """
+    database configuration
+    :param corpus_db_name: database name
+    :param corpus_path: path to corpus files
+    :param file_ext: file extension for corpus files
+    :param file_start_pt: file name start for PT corpus files
+    :param file_start_en: file name start for EN corpus files
+    :param config: config.ini
+    """
     connection = db_utilities.make_connection(corpus_db_name)
     make_tables(connection)
     annotate_corpus(connection, corpus_path, file_start_pt, file_start_en, file_ext, config)
@@ -25,6 +39,15 @@ def corpus_setup_db(corpus_db_name, corpus_path, file_ext, file_start_pt, file_s
 
 
 def annotate_corpus(connection, corpus_path,  file_start_pt, file_start_en, file_ext, config):
+    """
+    Annotates corpus with NER
+    :param connection: corpus database connection
+    :param corpus_path: path to corpus files
+    :param file_start_pt: file name start for PT corpus files
+    :param file_start_en: file name start for EN corpus files
+    :param file_ext: file extension for corpus files
+    :param config: config.ini
+    """
 
     cursor = connection.cursor()
 
@@ -33,7 +56,6 @@ def annotate_corpus(connection, corpus_path,  file_start_pt, file_start_en, file
     dirs = next(walk(corpus_path))[1]
 
     flag = True  # for development
-    # TODO: remove flag after development
     for directory in dirs:
 
         if flag:
@@ -70,19 +92,15 @@ def annotate_corpus(connection, corpus_path,  file_start_pt, file_start_en, file
 def add_annotation(cursor, connection, annotation_text, annotation_ids, text_id, language):
     """
     add annotation to corpus database
-    :param cursor:
-    :param connection:
-    :param annotation_text:
+    :param cursor: corpus database
+    :param connection: corpus database
+    :param annotation_text: annotation to insert
     :param annotation_ids: owl ids list for this annotation. can be more than one because synonym, pref_name, ...
-    :param text_id:
-    :param language:
-    :return:
+    :param text_id: database id for which text does this annotation refer to
+    :param language: pt or en
     """
 
     annotation = annotation_text
-
-    # annotations_id = get_entity_owl_id(annotation)
-    # print("add_annotation: " + str(annotation) + " id: " + str(annotations_id))
 
     for annot in annotation_ids:
 
@@ -100,16 +118,16 @@ def add_annotation(cursor, connection, annotation_text, annotation_ids, text_id,
 
 def add_original_text(cursor, connection, text):
     """
-        add text to corpus database
-        :param connection:
-        :param cursor:
-        :param text:
-        :return:
-        """
+    add text to corpus database
+    :param cursor: corpus database
+    :param connection: corpus database
+    :param text: to insert in database
+    :return: database id of inserted row
+    """
 
     cursor.execute('''  
-                            INSERT OR IGNORE INTO original_doc (original_text) VALUES (?)
-                             ''', (text,))
+                        INSERT OR IGNORE INTO original_doc (original_text) VALUES (?)
+                         ''', (text,))
     connection.commit()
     return cursor.lastrowid
 
@@ -117,11 +135,11 @@ def add_original_text(cursor, connection, text):
 def add_english(cursor, connection, text, inserted_pt_id):
     """
     add english text to corpus database
-    :param connection:
-    :param cursor:
-    :param text:
-    :param inserted_pt_id:
-    :return:
+    :param cursor: corpus database
+    :param connection: corpus database
+    :param text: to insert in database
+    :param inserted_pt_id: database id of previously inserted pt text, to which this text is a translation_model for
+    :return: database id of inserted row
     """
 
     cursor.execute('''  
@@ -135,7 +153,6 @@ def make_tables(connection):
     """
     creates corpus tables
     :param connection: sqlite3 connection
-    :return:
     """
 
     cursor = connection.cursor()
@@ -189,6 +206,11 @@ def make_tables(connection):
 
 
 def get_corpus_id_and_text(config):
+    """
+    retrieves corpus id and text from database
+    :param config: config.ini
+    :return: dict { corpus_en_id : text : corpus_en_text }
+    """
 
     corpus_db_name = config.get("Corpus", "corpus_file")
     connection = db_utilities.make_connection(corpus_db_name)
@@ -208,8 +230,8 @@ def get_corpus_id_and_text(config):
 
 def get_entities_owl(config) -> list:
     """
-
-    :param config:
+    Retrieves annotated corpus owl ids from database
+    :param config: config.ini
     :return: list of owl ids in all corpus
     """
     corpus_db_name = config.get("Corpus", "corpus_file")
@@ -222,19 +244,16 @@ def get_entities_owl(config) -> list:
     return rows
 
 
-def get_owl_annotations_en(config, doc_id):
+def get_owl_annotations_en(connection_corpus, doc_id):
     """
-
-    :param config:
-    :param doc_id:
+    Retrieves owl ids for one document from database
+    :param connection_corpus: sqlite3 connection
+    :param doc_id: database internal doc id
     :return: list of owl ids for this doc_id
     """
-    corpus_db_name = config.get("Corpus", "corpus_file")
-    connection = db_utilities.make_connection(corpus_db_name)
 
-    rows = connection.execute(''' SELECT owl_id FROM annotation, en_has_annotation
+    rows = connection_corpus.execute(''' SELECT owl_id FROM annotation, en_has_annotation
                               WHERE en_has_annotation.annotation=annotation.id
                               AND en_has_annotation.document = ?''', (doc_id,)).fetchall()
 
-    connection.close()
     return rows

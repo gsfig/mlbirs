@@ -7,9 +7,10 @@ import corpus_utilities as corpus
 
 def get_similar(config, entities) -> dict:
     """
-    :param config:
+    gets similar entities with similarity score. Returned entities are parents due to smaller search space.
+    :param config: config.ini
     :param entities: list of entity names
-    :return:
+    :return: dict { corpus_id : text, resnik dishin, resnik mica, lin mica }
     """
 
     dishin_db = config.get('DISHIN', 'dishin_file')
@@ -27,12 +28,24 @@ def get_similar(config, entities) -> dict:
 
 
 def rank_corpus(config, corpus_scores):
+    """
+    gets similarity score and returns average for each document in corpus
+    :param config: config.ini
+    :param corpus_scores: dict with average score for each owl entity in corpus
+    :return: dict { corpus_en_id : text, resnik dishin, resnik mica, lin mica }
+    """
 
     corpus_dict = corpus.get_corpus_id_and_text(config)  # dict { corpus_en_id : text : corpus_en_text }
 
+    corpus_db_name = config.get("Corpus", "corpus_file")
+    connection_corpus = db_utilities.make_connection(corpus_db_name)
+
+    db_name = config.get('MainDB', 'db_file')
+    connection_main = db_utilities.connect_db(db_name)
+
     for doc_id in corpus_dict:
-        corpus_owl = corpus.get_owl_annotations_en(config, doc_id)
-        corpus_owl = main_db.get_parents_owl(config, corpus_owl)  # dict {RID_annotation : [RIDs_parents]}
+        corpus_owl = corpus.get_owl_annotations_en(connection_corpus, doc_id)
+        corpus_owl = main_db.get_parents_owl(config, connection_main, corpus_owl)  # dict {RID_annotation : [RIDs_parents]}
         corpus_owl = [item for sublist in list(corpus_owl.values()) for item in sublist]  # list with duplicates
         length = 0
 
@@ -43,14 +56,17 @@ def rank_corpus(config, corpus_scores):
                 corpus_dict[doc_id]['resnik_dishin'] += corpus_scores[corpus_annotation]['resnik_dishin']
                 corpus_dict[doc_id]['resnik_mica'] += corpus_scores[corpus_annotation]['resnik_mica']
                 corpus_dict[doc_id]['lin_mica'] += corpus_scores[corpus_annotation]['lin_mica']
-                length +=1
-                # print(str(corpus_scores[corpus_annotation]['resnik_dishin']) + "; " + str(corpus_scores[corpus_annotation]['resnik_mica']) + "; " + str(corpus_scores[corpus_annotation]['lin_mica']))
+                length += 1
+                #print(str(corpus_scores[corpus_annotation]['resnik_dishin']) + "; " + str(corpus_scores[corpus_annotation]['resnik_mica']) + "; " + str(corpus_scores[corpus_annotation]['lin_mica']))
 
         # average
         corpus_dict[doc_id]['resnik_dishin'] = corpus_dict[doc_id]['resnik_dishin'] / length
+        #print("doc_id: " + str(doc_id) + " l: " + str(length) + " score: " + str(corpus_dict[doc_id]['resnik_dishin']))
         corpus_dict[doc_id]['resnik_mica'] = corpus_dict[doc_id]['resnik_mica'] / length
         corpus_dict[doc_id]['lin_mica'] = corpus_dict[doc_id]['lin_mica'] / length
 
+    connection_main.close()
+    connection_corpus.close()
     return corpus_dict
     # corpus1 : text, ave1, ave2, ave3 ;
     # corpus2 : text, ave1, ave2, ave3 ; ...
@@ -61,8 +77,8 @@ def evaluate_similarity(query_parents, corpus_parents, dishin_db):
     return each corpus owl_id average score
     :param query_parents:
     :param corpus_parents:
-    :param dishin_db:
-    :return:
+    :param dishin_db: similarity database
+    :return: dict{ corpus_owl : resnik dishin, resnik mica, lin mica }
     """
     print('evaluating similarity: query list: ' + str(len(query_parents)) + ', corpus list: ' + str(len(corpus_parents)))
 
@@ -70,15 +86,13 @@ def evaluate_similarity(query_parents, corpus_parents, dishin_db):
 
     # dict{ query : corpus : resnik dishin, resnik mica, lin mica }
 
-    #similar = dict()
     scores = dict()
 
     for query_owl in query_parents:
-        #corpus_dict = dict()
+        q = dishin_ssm.get_id(query_owl)
 
         for corpus_owl in corpus_parents:
 
-            q = dishin_ssm.get_id(query_owl)
             c = dishin_ssm.get_id(corpus_owl)
             dishin_ssm.intrinsic = True
             dishin_ssm.mica = False
@@ -94,12 +108,10 @@ def evaluate_similarity(query_parents, corpus_parents, dishin_db):
             scores[corpus_owl]['resnik_mica'] += resnik_mica
             scores[corpus_owl]['lin_mica'] += lin_mica
 
-            #corpus_dict[corpus_owl] = {'resnik_dishin': resnik_dishin, 'resnik_mica' : resnik_mica, 'lin_mica' : lin_mica}
-            # print(str(query_owl) + " " + str(corpus_owl) + " resnik_dishin: " + str(resnik_dishin) + " resnik_mica: " + str(resnik_mica) + " lin_mica: " + str(lin_mica))
+            # print("corpus_owl: " + corpus_owl + " query_owl: " + query_owl + " s: " + str(lin_mica))
 
-        #similar[query_owl] = corpus_dict
+    length = len(query_parents)  # for average
 
-    length = len(query_parents) # for average
     for owl in scores:
         scores[owl]['resnik_dishin'] = scores[owl]['resnik_dishin'] / length
         scores[owl]['resnik_mica'] = scores[owl]['resnik_mica'] / length
@@ -111,18 +123,28 @@ def evaluate_similarity(query_parents, corpus_parents, dishin_db):
 def get_corpus_parents(config):
     """
     list of corpus owl parents without duplicates
-    :param config:
-    :return:
+    :param config: config.ini
+    :return: list with owl ids
     """
 
     corpus_list = corpus.get_entities_owl(config)
+    db_name = config.get('MainDB', 'db_file')
+    connection_main = db_utilities.connect_db(db_name)
 
-    corpus_list = main_db.get_parents_owl(config, corpus_list)
+    corpus_list = main_db.get_parents_owl(config,connection_main, corpus_list)
     corpus_list = [item for sublist in list(corpus_list.values()) for item in sublist]
+
+    connection_main.close()
+
     return list(set(corpus_list))  # remove duplicates
 
 
 def similarity_configuration(config):
+    """
+    configures similarity system with DISHIN
+    :param config: config.ini
+    :return: connection
+    """
 
     dishin_db = config.get('DISHIN', 'dishin_file')
     file = config.get('Files', 'rdf_file')

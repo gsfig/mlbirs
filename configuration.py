@@ -5,6 +5,9 @@ import main_db
 
 
 class Configuration:
+    """
+    Configures different modules necessary
+    """
     corpus_cursor = ''
     similarity_connection = ''
     main_db_connection = ''

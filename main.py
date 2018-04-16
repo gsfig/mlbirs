@@ -24,11 +24,3 @@ def query():
 # export FLASK_DEBUG=1
 # export FLASK_APP=main.py
 # python -m flask run
-
-## DEVELOP: pip freeze > requirements.txt
-
-
-# TODO: serve static files with apache or something else
-# http://flask.pocoo.org/docs/0.12/quickstart/#static-files
-# https://stackoverflow.com/questions/4239825/static-files-in-flask-robot-txt-sitemap-xml-mod-wsgi
-# see Deployment Options on flask documentation

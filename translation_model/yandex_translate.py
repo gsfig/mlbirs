@@ -1,5 +1,5 @@
 import requests
-import translation.yandex_secret as yandex_secret
+import translation_model.yandex_secret as yandex_secret
 
 
 def yandex_translation(to_translate, lang_from, lang_to):
@@ -19,7 +19,6 @@ def yandex_translation(to_translate, lang_from, lang_to):
     url = 'https://translate.yandex.net/api/v1.5/tr.json/translate?key='
     api_key = yandex_secret.get_key()
     text = '&text=' + to_translate
-    # text = '&text=' + 'papel' # TODO: remove, for development purpose.
     lang = '&lang=' + lang_from + '-' + lang_to
 
     full_url = url + api_key + text + lang
@@ -32,16 +31,16 @@ def yandex_translation(to_translate, lang_from, lang_to):
     if reply_code == 200:  # Operation completed successfully
         reply_text = reply['text']
     elif reply_code == 401:
-        print('yandex translation error: Invalid API key')
+        print('yandex translation_model error: Invalid API key')
     elif reply_code == 402:
-        print('yandex translation error: Blocked API key')
+        print('yandex translation_model error: Blocked API key')
     elif reply_code == 404:
-        print('yandex translation error: Exceeded the daily limit on the amount of translated text')
+        print('yandex translation_model error: Exceeded the daily limit on the amount of translated text')
     elif reply_code == 413:
-        print('yandex translation error: Exceeded the maximum text size')
+        print('yandex translation_model error: Exceeded the maximum text size')
     elif reply_code == 422:
-        print('yandex translation error: The text cannot be translated')
+        print('yandex translation_model error: The text cannot be translated')
     elif reply_code == 501:
-        print('yandex translation error: The specified translation direction is not supported')
+        print('yandex translation_model error: The specified translation_model direction is not supported')
 
     return reply_text[0]

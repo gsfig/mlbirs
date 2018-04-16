@@ -7,8 +7,8 @@ import sqlite3
 def configuration(config):
     """
     main dababase configuration
-    :param config:
-    :return:
+    :param config: config.ini
+    :return: connection
     """
 
     db_name = config.get('MainDB', 'db_file')
@@ -27,11 +27,13 @@ def configuration(config):
 
 def setup_db(db_name, owl_file, hierarchy_level, predicates, prefix_to_remove, relation):
     """
-
-    :param db_name:
-    :param owl_file:
-    :param hierarchy_level:
-    :return:
+    database configuration
+    :param db_name: database name
+    :param owl_file: owl file path
+    :param hierarchy_level: number of levels to go up the owl tree
+    :param predicates: list of owl predicates
+    :param prefix_to_remove: owl prefix
+    :param relation: owl relation
     """
 
     connection = db_utilities.make_connection(db_name)
@@ -40,7 +42,7 @@ def setup_db(db_name, owl_file, hierarchy_level, predicates, prefix_to_remove, r
 
     create_tables(predicates, connection, hierarchy_level)
 
-    populate_db(connection, owl_file, hierarchy_level, prefix_to_remove, predicates, relation)
+    populate_db(connection, owl_file, prefix_to_remove, predicates, relation)
 
     insert_parents(connection, hierarchy_level)
 
@@ -48,17 +50,16 @@ def setup_db(db_name, owl_file, hierarchy_level, predicates, prefix_to_remove, r
     connection.close()
 
 
-def populate_db(connection, owl_file, hierarchy_level, prefix_to_remove, predicates: list, relation):
+def populate_db(connection, owl_file, prefix_to_remove, predicates: list, relation):
     """
-
-    :param owl_file:
-    :param hierarchy_level: how many parents
-    :param prefix_to_remove:
+    Insert rows in database
+    :param connection: database connection
+    :param owl_file: owl file path
+    :param prefix_to_remove: owl prefix
     :param predicates: prefered_name, synonym, ...
     :param relation: is_a OR subClass_of
-    :return:
     """
-    print("populate DB")
+    print("reading owl file, could take a while")
     r = str(relation).replace(prefix_to_remove, '')
     relations = list(predicates)
     relations.append(r) # is_a + prefered name ...
@@ -96,7 +97,7 @@ def populate_db(connection, owl_file, hierarchy_level, prefix_to_remove, predica
                 # print(rows)
 
                 count2 = connection.execute(''' SELECT COUNT(*) FROM '%s' ''' % p).fetchall()
-                # TODO: remove count
+
                 if int(count2[0]) <= int(count1[0]):
                     print("s: " + s + " p: " + p + " o: " + o + ", fkentity_subject: " + entry1)
 
@@ -112,7 +113,6 @@ def populate_db(connection, owl_file, hierarchy_level, prefix_to_remove, predica
                                 INSERT OR IGNORE INTO parent_1 (entity_child, entity_parent) VALUES (?,?)
                              ''', (entry1, parent,))
 
-            # TODO: remove else
             else:
                 print("else, " + "s: " + s + " p: " + p + " o: " + o + ", fkentity_subject: " + entry1)
 
@@ -121,6 +121,11 @@ def populate_db(connection, owl_file, hierarchy_level, prefix_to_remove, predica
 
 
 def insert_parents(connection, hierarchy_level):
+    """
+    Insert owl parents into database
+    :param connection: database sqlite3 connection
+    :param hierarchy_level: number of levels to go up the owl tree
+    """
 
     print('insert parents')
 
@@ -153,7 +158,7 @@ def insert_parents(connection, hierarchy_level):
                 # print(r[0], r[1], r[2])
                 alert = alert + 1
                 if alert > 1:
-                    raise RuntimeError('too many rows')  # TODO: Remove this
+                    raise RuntimeError('too many rows')
 
                 parent_2 = r[2]
 
@@ -175,6 +180,12 @@ def insert_parents(connection, hierarchy_level):
 
 
 def create_tables(predicate_list, connection, hierarchy_level):
+    """
+    Create database tables
+    :param predicate_list: prefered_name, synonym, ...
+    :param connection: database sqlite3 connection
+    :param hierarchy_level: number of levels to go up the owl tree
+    """
 
     print("create tables main_db")
 
@@ -224,10 +235,10 @@ def create_tables(predicate_list, connection, hierarchy_level):
 
 def get_owl_id(config, entity_names: list) -> dict:
     """
-
-    :param config:
-    :param entity_names:
-    :return:
+    Retrieve corresponding owl ids for each name
+    :param config: config.ini
+    :param entity_names: owl names
+    :return: dict { owl_name: [owl ids]}
     """
 
     tables_to_search = json.loads(config.get("Predicates", "to_extract"))
@@ -260,13 +271,13 @@ def get_owl_id(config, entity_names: list) -> dict:
     return entity_ids
 
 
-def get_internal_ids(connection, tables_to_search, entity):
+def get_internal_ids(connection, tables_to_search, entity) -> list:
     """
     get db internal ids from description
-    :param connection:
-    :param tables_to_search:
-    :param entity:
-    :return:
+    :param connection: database connection
+    :param tables_to_search: which tables to include in retrieval
+    :param entity: name to search for
+    :return: list of database ids for this entity
     """
 
     internal_ids = list()
@@ -287,8 +298,6 @@ def get_parents(config, query_entities) -> dict:
     :param query_entities:
     :return:
     """
-
-    # TODO: can change this to only call get_parents_owl(config, owl_list) function
 
     db_name = config.get('MainDB', 'db_file')
     connection = db_utilities.connect_db(db_name)
@@ -318,30 +327,29 @@ def get_parents(config, query_entities) -> dict:
     return query_parents
 
 
-def get_parents_owl(config, owl_list):
+def get_parents_owl(config, connection_main, owl_list):
     """
     get parents from owl ids
 
-    :param config:
-    :param owl_list:
-    :return:
+    :param config: config.ini
+    :param owl_list: owl ids
+    :param connection_main: sqlite3 connection
+    :return: dict {owl_id : [parents_owl_ids}}
     """
 
-    db_name = config.get('MainDB', 'db_file')
-    connection = db_utilities.connect_db(db_name)
     table_name = config.get('Parents', 'table_name') + config.get('Parents', 'level')
     query_parents = dict()
 
     for entity in owl_list:
-        entity_ids = get_internal_ids_owl(connection, entity)
+        entity_ids = get_internal_ids_owl(connection_main, entity)
         parent_list = list()
 
         for entity_id in entity_ids:
-            parents = connection.execute(''' SELECT entity_parent FROM '%s' WHERE entity_child =? ''' % table_name,
+            parents = connection_main.execute(''' SELECT entity_parent FROM '%s' WHERE entity_child =? ''' % table_name,
                                          (entity_id,)).fetchall()
 
             for p in parents:
-                owl_ids = connection.execute(''' SELECT owl_id FROM '%s' WHERE id =? ''' % 'entity',
+                owl_ids = connection_main.execute(''' SELECT owl_id FROM '%s' WHERE id =? ''' % 'entity',
                                              (p,)).fetchall()
                 for owl_id in owl_ids:
                     parent_list.append(owl_id)
@@ -349,7 +357,6 @@ def get_parents_owl(config, owl_list):
                     # print('entity: ' + str(entity) + '; entity_id: ' + str(entity_id) + '; parent: ' + str(p) + '; owl_parent: ' + str(owl_id))
 
         query_parents[entity] = parent_list
-    connection.close()
 
     return query_parents
 
@@ -357,9 +364,9 @@ def get_parents_owl(config, owl_list):
 def get_internal_ids_owl(connection, owl_id):
     """
     get internal ids from owl id
-    :param connection:
-    :param owl_id:
-    :return:
+    :param connection: sqlite3 connection
+    :param owl_id: owl id to get internal id
+    :return: internal database id
     """
 
     return connection.execute(''' SELECT id FROM entity WHERE owl_id=? ''',(owl_id,)).fetchall()

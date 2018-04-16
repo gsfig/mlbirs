@@ -67,7 +67,7 @@ $(document).ready(function () {
                         };
 
 
-                        var alltext = row.getData().doc_text
+                        var alltext = row.getData().doc_text;
                         // alert("Row " + row.getData().average_score + " Clicked!!!!");
                         $("#full-text").text(function(){
                             return alltext

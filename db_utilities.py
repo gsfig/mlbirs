@@ -14,7 +14,7 @@ def check_db_file(db_file: str):
             with open(db_file, 'r', encoding="ISO-8859-1") as f:
                 header = f.read(100)
                 if header.startswith('SQLite format 3'):
-                    print(str(db_file) + " database detected")
+                    # print(str(db_file) + " database detected")
                     return True
                 else:
                     print(str(db_file) + " file is not SQLite format 3")

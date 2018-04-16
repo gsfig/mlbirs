@@ -8,13 +8,19 @@ from subprocess import Popen, PIPE
 
 
 class Ner:
-
+    """
+    Named entity recognition
+    """
     lexicon = ''
 
     def __init__(self, config):
         self.lexicon = config.get('NER', 'lexicon_file')
 
     def ner_configuration(self, config):
+        """
+        configures NER
+        :param config: config.ini
+        """
 
         if not utilities.check_file(self.lexicon):
             owl_names_extract = config.get('Predicates', 'to_extract')
@@ -27,8 +33,7 @@ class Ner:
     def mer_data_file(self, lexicon_file):
         """
         Makes MER internal data files.
-        :param lexicon_file:
-        :return:
+        :param lexicon_file: txt file with lexicon
         """
 
         print("mer produce data files")
@@ -55,7 +60,6 @@ class Ner:
         """
         identifies entities according to lexicon
         :param text: text to identify
-        :param lexicon_file: lexicon file
         :return: list with one entity per line (name)
         """
         lexicon_file = self.lexicon
@@ -78,9 +82,9 @@ class Ner:
 
     def get_entities_and_frequencies(self, mer_response):
         """
-
+        Get all annotated term and number of occurrences
         :param mer_response: first column corresponds to the start-index, the second to the end-index and the third to the annotated term
-        :return:
+        :return: dict {entity : frequency}
         """
 
         entities = dict()
@@ -105,7 +109,6 @@ class Ner:
         :param file: owl / rdf file
         :param owl_names_extract: owl predicates to extract
         :param to_remove: owl tags to remove
-        :return:
         """
         print("NER: creating lexicon from database")
         pred_list = json.loads(owl_names_extract)
@@ -125,7 +128,6 @@ class Ner:
         writes dictionary to file as long list. Only extracts owl children
         :param data: dict data
         :param lexicon_file: file to write
-        :return:
         """
 
         print("writing " + str(lexicon_file) + " file")
@@ -146,10 +148,9 @@ class Ner:
         """
         temporary dict to make sure no duplicates are added
         :param data: main dict to add s, p, o
-        :param subject:
-        :param obj:
-        :param tag:
-        :return:
+        :param subject: owl subject
+        :param obj: owl object
+        :param tag: owl tag
         """
         if subject in data:
             o = data.get(subject)
@@ -168,4 +169,10 @@ class Ner:
         data[subject] = o
 
     def remove_string(self, to_edit, to_remove):
+        """
+        Auxiliar function
+        :param to_edit:
+        :param to_remove:
+        :return:
+        """
         return to_edit.replace(to_remove, '')

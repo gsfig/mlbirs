@@ -1,7 +1,7 @@
 from xml.etree import ElementTree
 import requests
-from translation.bing.AzureAuthClient import AzureAuthClient
-from translation.bing.azureClientSecret import getsecret
+from translation_model.bing.AzureAuthClient import AzureAuthClient
+from translation_model.bing.azureClientSecret import getsecret
 
 
 def GetTextAndTranslate(textToTranslate, finalToken, langfrom, langto):
@@ -12,7 +12,7 @@ def GetTextAndTranslate(textToTranslate, finalToken, langfrom, langto):
     translationData = requests.get(translateUrl, headers=headers)
     # parse xml return values
     translation = ElementTree.fromstring(translationData.text.encode('utf-8'))
-    # display translation
+    # display translation_model
 
     return translation.text
 
