@@ -1,5 +1,5 @@
 import json
-# import development_file
+import development_file # development purposes: tests, etc.
 import configparser
 from configuration import Configuration
 from translation_serv import TranslationService
@@ -30,8 +30,9 @@ def dispatcher(query: str):
     # 1. Translate query
     translation = TranslationService()
     translated = translation.translate_query(query, "pt", "en")
-    # translated = "intrapulmonary"
-    print(translated)
+    if len(query) == 0:
+        translated = "pulmonary"
+    # print(translated)
 
     # 2. query NER (Name Entity Recognition)
     ner = Ner(config)
@@ -39,20 +40,25 @@ def dispatcher(query: str):
 
     if len(entities) < 1:
         print("no entities by NER")
+        return json.dumps({})
 
     # 3. find similar
-    similar_dict = similarity_model.get_similar(config, entities) # dict { corpus_en_id : text, resnik dishin, resnik mica, lin mica }
+    #similar_dict = similarity_model.get_similar(config, entities) # dict { corpus_en_id : text, resnik dishin, resnik mica, lin mica }
     # print(similar_dict)
 
     # 4. organize response
-    response = organize_response(similar_dict)
+    #response = organize_response(similar_dict)
 
-    return json.dumps(response)
+    response2 = development_file.get_response()
+
+    return response2
+    #return json.dumps(response)
 
 
 def organize_response(full_dict):
     """
-    Reduces dict to another dict with only necessary information for html response
+    Reduces dict to another dict with only necessary information for html response. Chooses which score (resnik dishin,
+    resnik mica, lin mica) to show.
     :param full_dict: dict with all information: { corpus_en_id : text, resnik dishin, resnik mica, lin mica }
     :return: dict {doc_id, doc_text, average_score}
     """
