@@ -14,8 +14,8 @@ def dispatcher(query: str):
     :param query: User query
     :return: json ready response to html
     """
-    print("dispatcher")
-    print("query: " + str(query))
+    # print("dispatcher")
+    # print("query: " + str(query))
 
     # 0. configurations, database and files creation
     config = configparser.ConfigParser()
